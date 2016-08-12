@@ -8,10 +8,16 @@ var HostTableHeaderLabels = require('../constants/HostTableHeaderLabels');
 import Icon from '../components/Icon';
 var InternalStorageMixin = require('../mixins/InternalStorageMixin');
 var ResourceTableUtil = require('../utils/ResourceTableUtil');
-var ProgressBar = require('./charts/ProgressBar');
+import StatusBar from '../components/StatusBar';
 import StringUtil from '../utils/StringUtil';
 import TableUtil from '../utils/TableUtil';
 import UnitHealthUtil from '../utils/UnitHealthUtil';
+
+const COLOR_CLASSNAMES = {
+  cpus: 'color-1',
+  mem: 'color-2',
+  disk: 'color-3'
+};
 
 var HostTable = React.createClass({
 
@@ -106,17 +112,15 @@ var HostTable = React.createClass({
   },
 
   renderStats: function (prop, node) {
-    var colorMapping = {
-      cpus: 1,
-      mem: 2,
-      disk: 3
-    };
 
     var value = node.getUsageStats(prop).percentage;
     return (
       <span className="spread-content">
-        <ProgressBar value={value}
-          colorIndex={colorMapping[prop]} /> <span>{value}%</span>
+        <StatusBar
+          data={[{value, className: COLOR_CLASSNAMES[prop]}]}
+          scale={100}
+          style={{transform: `scaleX(${value / 100})`}} />
+        <span>{value}%</span>
       </span>
     );
   },
@@ -220,7 +224,7 @@ var HostTable = React.createClass({
   render: function () {
     return (
       <Table
-        className="table inverse table-borderless-outer table-borderless-inner-columns flush-bottom"
+        className="host-table table inverse table-borderless-outer table-borderless-inner-columns flush-bottom"
         columns={this.getColumns()}
         colGroup={this.getColGroup()}
         containerSelector=".gm-scroll-view"
