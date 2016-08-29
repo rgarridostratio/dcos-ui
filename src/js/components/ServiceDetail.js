@@ -50,7 +50,8 @@ class ServiceDetail extends mixin(InternalStorageMixin, StoreMixin, TabsMixin) {
         events: [
           'serviceRestartError',
           'serviceRestartSuccess'
-        ]
+        ],
+        suppressUpdate: true
       }
     ];
 
