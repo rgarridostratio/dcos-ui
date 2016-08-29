@@ -4,7 +4,6 @@ import {Link} from 'react-router';
 import React from 'react';
 import {StoreMixin} from 'mesosphere-shared-reactjs';
 
-import EventTypes from '../constants/EventTypes';
 import HealthBar from './HealthBar';
 import Icon from './Icon';
 import Links from '../constants/Links';
@@ -69,20 +68,6 @@ var ServicesTable = React.createClass({
     ];
   },
 
-  componentDidMount() {
-    MarathonStore.addChangeListener(
-      EventTypes.MARATHON_APPS_CHANGE,
-      this.onMarathonAppsChange
-    );
-  },
-
-  componentWillUnmount() {
-    MarathonStore.removeChangeListener(
-      EventTypes.MARATHON_APPS_CHANGE,
-      this.onMarathonAppsChange
-    );
-  },
-
   onServiceDestroyModalClose() {
     this.closeDialog();
     this.context.router.transitionTo('services-page');
@@ -131,10 +116,6 @@ var ServicesTable = React.createClass({
     this.setState({disabledDialog: ServiceActionItem.RESTART}, () => {
       MarathonStore.restartService(service.getId(), !!this.state.errorMsg);
     });
-  },
-
-  onMarathonAppsChange() {
-    this.forceUpdate();
   },
 
   onActionsItemSelection(service, actionItem) {
