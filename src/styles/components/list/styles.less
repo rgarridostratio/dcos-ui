@@ -10,6 +10,7 @@
       }
     }
 
+    // TODO: Come up with a better class to provide this type of style.
     .list-item {
     	display: flex;
       border-top: 1px solid @neutral;
@@ -22,6 +23,13 @@
     }
 
     &.list-inline {
+
+      li {
+        display: inline-block;
+        float: none;
+        vertical-align: baseline;
+      }
+
       .list-item-aligned-right {
         float: right;
       }

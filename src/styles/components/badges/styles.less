@@ -4,6 +4,7 @@
     color: @body-background-color;
     padding: 0 @base-spacing-unit * 0.25;
     background-color: @badge-background-color;
+    // TODO: Audit the need for this.
     border-radius: 1000px !important;
 
     &:empty {
@@ -12,14 +13,6 @@
 
     &.inverse {
       background-color: @badge-background-color-inverse;
-    }
-
-  }
-
-  .active {
-
-    .badge {
-      background-color: @white;
     }
 
   }
@@ -41,15 +34,7 @@
       align-self: center;
     }
 
-    .inverse &,
-    &.inverse {
-
-      .badge {
-        background-color: @white;
-      }
-
-    }
-
+    // TODO: Audit the need for this white background color.
     &.badge-primary {
 
       .badge {
