@@ -14,6 +14,7 @@ import Config from '../../config/Config';
 import CollapsibleErrorMessage from '../CollapsibleErrorMessage';
 import Icon from '../Icon';
 import MarathonStore from '../../stores/MarathonStore';
+import Pod from '../../structs/Pod';
 import ServiceForm from '../ServiceForm';
 import Service from '../../structs/Service';
 import ServiceUtil from '../../utils/ServiceUtil';
@@ -201,7 +202,8 @@ class ServiceFormModal extends mixin(StoreMixin) {
     let {service} = this.state;
 
     try {
-      service = new Service(JSON.parse(jsonDefinition));
+      service = ServiceUtil.createServiceFromDefinition(
+        JSON.parse(jsonDefinition));
     } catch (e) {
 
     }
@@ -267,6 +269,10 @@ class ServiceFormModal extends mixin(StoreMixin) {
   }
 
   shouldDisableForm(service) {
+    if (service instanceof Pod) {
+      return true;
+    }
+
     let containerSettings = service.getContainerSettings();
 
     let portDefinitions = service.getPortDefinitions();
@@ -480,9 +486,8 @@ class ServiceFormModal extends mixin(StoreMixin) {
   getModalContents() {
     let {defaultTab, jsonMode, service} = this.state;
 
-    let jsonDefinition = JSON.stringify(service, null, 2);
-
     if (jsonMode) {
+      let jsonDefinition = JSON.stringify(service, null, 2);
       let toolTipContent = (
         <div>
           Use the JSON editor to enter Marathon Application definitions manually.
