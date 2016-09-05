@@ -5,6 +5,14 @@ import {
 import Application from './Application';
 
 module.exports = class Framework extends Application {
+  getName() {
+    let labels = this.getLabels();
+    if (labels && labels.DCOS_PACKAGE_FRAMEWORK_NAME) {
+      return labels.DCOS_PACKAGE_FRAMEWORK_NAME;
+    }
+    return super.getName();
+  }
+
   getNodeIDs() {
     return this.get('slave_ids');
   }
@@ -15,17 +23,14 @@ module.exports = class Framework extends Application {
     return ROUTE_ACCESS_PREFIX + (this.get('name') || '').replace(regexp, '');
   }
 
+  getSpec() {
+    // DCOS-9613: This should be properly implemented
+    return this;
+  }
+
   getUsageStats(resource) {
     let value = this.get('used_resources')[resource];
 
     return {value};
-  }
-
-  getName() {
-    let labels = this.getLabels();
-    if (labels && labels.DCOS_PACKAGE_FRAMEWORK_NAME) {
-      return labels.DCOS_PACKAGE_FRAMEWORK_NAME;
-    }
-    return super.getName();
   }
 };
