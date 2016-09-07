@@ -5,6 +5,7 @@ import ConfigurationView from './ConfigurationView';
 import DCOSStore from '../stores/DCOSStore';
 import MarathonStore from '../stores/MarathonStore';
 import Service from '../structs/Service';
+import ServiceSchema from '../schemas/ServiceSchema';
 import ServiceFormModal from './modals/ServiceFormModal';
 import ServiceUtil from '../utils/ServiceUtil';
 
@@ -190,6 +191,7 @@ class ServiceDetailConfigurationTab extends React.Component {
         <ServiceFormModal isEdit={true}
           open={serviceToEdit != null}
           service={serviceSpec}
+          schema={ServiceSchema}
           onClose={this.handleCloseServiceFormModal} />
       </div>
     );

@@ -12,6 +12,7 @@ import ServiceDetailTaskTab from './ServiceDetailTaskTab';
 import ServiceFormModal from './modals/ServiceFormModal';
 import ServiceInfo from './ServiceInfo';
 import ServiceRestartModal from './modals/ServiceRestartModal';
+import ServiceSchema from '../schemas/ServiceSchema';
 import ServiceSuspendModal from './modals/ServiceSuspendModal';
 import ServiceScaleFormModal from './modals/ServiceScaleFormModal';
 import TabsMixin from '../mixins/TabsMixin';
@@ -130,7 +131,8 @@ class ServiceDetail extends mixin(InternalStorageMixin, TabsMixin) {
         </div>
         <ServiceFormModal isEdit={true}
           open={serviceActionDialog === ServiceActionItem.EDIT}
-          service={service.getSpec()}
+          service={service}
+          schema={ServiceSchema}
           onClose={this.closeDialog} />
         <ServiceDestroyModal
           onClose={this.onServiceDestroyModalClose}

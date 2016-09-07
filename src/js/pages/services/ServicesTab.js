@@ -3,6 +3,7 @@ import React from 'react';
 import {Link, RouteHandler} from 'react-router';
 import {StoreMixin} from 'mesosphere-shared-reactjs';
 
+import Application from '../../structs/Application';
 import AlertPanel from '../../components/AlertPanel';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import DCOSStore from '../../stores/DCOSStore';
@@ -20,6 +21,7 @@ import Service from '../../structs/Service';
 import ServiceDetail from '../../components/ServiceDetail';
 import ServiceFilterTypes from '../../constants/ServiceFilterTypes';
 import ServiceFormModal from '../../components/modals/ServiceFormModal';
+import ServiceSchema from '../../schemas/ServiceSchema';
 import ServiceSearchFilter from '../../components/ServiceSearchFilter';
 import ServiceSidebarFilters from '../../components/ServiceSidebarFilters';
 import ServiceGroupFormModal from '../../components/modals/ServiceGroupFormModal';
@@ -374,6 +376,8 @@ var ServicesTab = React.createClass({
           onClose={this.handleCloseGroupFormModal}/>
         <ServiceFormModal open={state.isServiceFormModalShown}
           id={serviceId}
+          service={new Application()}
+          schema={ServiceSchema}
           onClose={this.handleCloseServiceFormModal}/>
       </div>
     );

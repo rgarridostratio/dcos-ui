@@ -102,7 +102,7 @@ const ServiceUtil = {
     throw Error('Unknown service response: '+JSON.stringify(data));
   },
 
-  createServiceFromFormModel(formModel, schema, isEdit = false, definition = {}) {
+  createSpecFromFormModel(formModel, schema, isEdit = false, definition = {}) {
 
     if (formModel != null) {
       let {
@@ -443,12 +443,12 @@ const ServiceUtil = {
     return ServiceUtil.createSpecFromDefinition(definition);
   },
 
-  createFormModelFromSchema(schema, service = new Application()) {
+  createFormModelFromSchema(schema, serviceSpec = new ApplicationSpec()) {
 
-    return getFindPropertiesRecursive(service, schema.properties);
+    return getFindPropertiesRecursive(serviceSpec, schema.properties);
   },
 
-  getAppDefinitionFromService(service) {
+  getAppDefinitionFromSpec(service) {
 
     let appDefinition = JSON.parse(JSON.stringify(service));
 

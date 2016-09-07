@@ -14,11 +14,10 @@ import Config from '../../config/Config';
 import CollapsibleErrorMessage from '../CollapsibleErrorMessage';
 import Icon from '../Icon';
 import MarathonStore from '../../stores/MarathonStore';
-import Pod from '../../structs/Pod';
+import PodSpec from '../../structs/PodSpec';
 import ServiceForm from '../ServiceForm';
 import Service from '../../structs/Service';
 import ServiceUtil from '../../utils/ServiceUtil';
-import ServiceSchema from '../../schemas/ServiceSchema';
 import ToggleButton from '../ToggleButton';
 import ErrorPaths from '../../constants/ErrorPaths';
 
@@ -107,16 +106,12 @@ class ServiceFormModal extends mixin(StoreMixin) {
   constructor() {
     super(...arguments);
 
-    let model =
-      ServiceUtil.createFormModelFromSchema(ServiceSchema);
-
     this.state = {
       defaultTab: '',
       errorMessage: null,
       jsonMode: false,
-      model,
       pendingRequest: false,
-      service: ServiceUtil.createServiceFromFormModel(model, ServiceSchema)
+      serviceSpec: null
     };
 
     this.store_listeners = [
@@ -137,6 +132,10 @@ class ServiceFormModal extends mixin(StoreMixin) {
     });
   }
 
+  componentWillMount() {
+    this.resetState();
+  }
+
   componentWillReceiveProps(nextProps) {
     super.componentWillReceiveProps(...arguments);
     if (!this.props.open && nextProps.open) {
@@ -154,22 +153,12 @@ class ServiceFormModal extends mixin(StoreMixin) {
   }
 
   resetState(props = this.props) {
-    let model = ServiceUtil.createFormModelFromSchema(ServiceSchema);
-    if (props.id) {
-      model.general.id = props.id;
-    }
-    let service = ServiceUtil.createServiceFromFormModel(
-      model,
-      ServiceSchema,
-      this.props.isEdit
-    );
-    if (props.service) {
-      service = props.service;
-    }
+    let serviceSpec = props.service.getSpec();
+    console.log('Reseting to:', serviceSpec);
 
     let warningMessage = null;
     let jsonMode = false;
-    if (this.shouldDisableForm(service)) {
+    if (this.shouldDisableForm(serviceSpec)) {
       warningMessage = {
         message: 'Your config contains attributes we currently only support ' +
         'in the JSON mode.'
@@ -177,15 +166,15 @@ class ServiceFormModal extends mixin(StoreMixin) {
       jsonMode = true;
     }
 
+    console.log('state[resetState]:', serviceSpec);
     this.setState({
       defaultTab: '',
       warningMessage,
       errorMessage: null,
       force: false,
       jsonMode,
-      model,
       pendingRequest: false,
-      service
+      serviceSpec
     });
   }
 
@@ -199,27 +188,27 @@ class ServiceFormModal extends mixin(StoreMixin) {
   }
 
   handleJSONChange(jsonDefinition) {
-    let {service} = this.state;
+    let {serviceSpec} = this.state;
 
     try {
-      service = ServiceUtil.createServiceFromDefinition(
+      serviceSpec = ServiceUtil.createSpecFromDefinition(
         JSON.parse(jsonDefinition));
     } catch (e) {
-
     }
 
     let warningMessage = null;
 
-    if (this.shouldDisableForm(service)) {
+    if (this.shouldDisableForm(serviceSpec)) {
       warningMessage = {
         message: 'Your config contains attributes we currently only support ' +
         'in the JSON mode.'
       };
     }
 
+    console.log('state[handleJSONChange]:', serviceSpec);
     this.setState(
       {
-        service,
+        serviceSpec,
         errorMessage: null,
         warningMessage
       }
@@ -228,20 +217,20 @@ class ServiceFormModal extends mixin(StoreMixin) {
 
   handleJSONToggle() {
     let nextState = {};
+    let {serviceSpec} = this.state;
 
     if (!this.state.jsonMode) {
       let {model} = this.triggerSubmit();
-      let service = ServiceUtil.createServiceFromFormModel(
+      serviceSpec = ServiceUtil.createSpecFromFormModel(
         model,
-        ServiceSchema,
+        this.props.schema,
         this.props.isEdit,
-        this.state.service.get()
+        this.props.service.getSpec().get()
       );
-      nextState.model = model;
-      nextState.service = service;
     }
 
-    if (this.shouldDisableForm(this.state.service)) {
+    nextState.serviceSpec = serviceSpec;
+    if (this.shouldDisableForm(serviceSpec)) {
       nextState.warningMessage = {
         message: 'Your config contains attributes we currently only support ' +
         'in the JSON mode.'
@@ -249,6 +238,8 @@ class ServiceFormModal extends mixin(StoreMixin) {
     } else {
       nextState.jsonMode = !this.state.jsonMode;
     }
+
+    console.log('state[handleJSONToggle]:', nextState.serviceSpec);
     this.setState(nextState);
   }
 
@@ -268,14 +259,14 @@ class ServiceFormModal extends mixin(StoreMixin) {
     });
   }
 
-  shouldDisableForm(service) {
-    if (service instanceof Pod) {
+  shouldDisableForm(serviceSpec) {
+    if (serviceSpec instanceof PodSpec) {
       return true;
     }
 
-    let containerSettings = service.getContainerSettings();
+    let containerSettings = serviceSpec.getContainerSettings();
 
-    let portDefinitions = service.getPortDefinitions();
+    let portDefinitions = serviceSpec.getPortDefinitions();
 
     if (portDefinitions) {
       let invalidVIP = !portDefinitions.some(function (port) {
@@ -283,7 +274,7 @@ class ServiceFormModal extends mixin(StoreMixin) {
           return true;
         }
         return Object.keys(port.labels).some(function (key) {
-          return port.labels[key] === `${service.getId()}:${port.port}`;
+          return port.labels[key] === `${serviceSpec.getId()}:${port.port}`;
         });
       });
       if (invalidVIP) {
@@ -297,7 +288,7 @@ class ServiceFormModal extends mixin(StoreMixin) {
           return true;
         }
         return Object.keys(port.labels).some(function (key) {
-          return port.labels[key] === `${service.getId()}:` +
+          return port.labels[key] === `${serviceSpec.getId()}:` +
               `${port.containerPort}`;
         });
       });
@@ -344,7 +335,7 @@ class ServiceFormModal extends mixin(StoreMixin) {
     }
 
     if (this.state.jsonMode) {
-      marathonAction(this.state.service, this.state.force);
+      marathonAction(this.state.serviceSpec, this.state.force);
       this.setState({
         errorMessage: null,
         pendingRequest: true
@@ -358,20 +349,14 @@ class ServiceFormModal extends mixin(StoreMixin) {
       if (!isValidated) {
         return;
       }
-      let service = ServiceUtil.createServiceFromFormModel(
+      let serviceSpec = ServiceUtil.createSpecFromFormModel(
         model,
-        ServiceSchema,
+        this.props.schema,
         this.props.isEdit,
-        this.state.service.get()
+        this.props.service.getSpec().get()
       );
-      this.setState({
-        errorMessage: null,
-        model,
-        pendingRequest: true,
-        service
-      });
       marathonAction(
-        ServiceUtil.getAppDefinitionFromService(service),
+        ServiceUtil.getAppDefinitionFromSpec(serviceSpec),
         this.state.force
       );
     }
@@ -484,10 +469,11 @@ class ServiceFormModal extends mixin(StoreMixin) {
   }
 
   getModalContents() {
-    let {defaultTab, jsonMode, service} = this.state;
+    let {defaultTab, jsonMode, serviceSpec} = this.state;
+    let {service} = this.props;
 
     if (jsonMode) {
-      let jsonDefinition = JSON.stringify(service, null, 2);
+      let jsonDefinition = JSON.stringify(serviceSpec, null, 2);
       let toolTipContent = (
         <div>
           Use the JSON editor to enter Marathon Application definitions manually.
@@ -523,7 +509,16 @@ class ServiceFormModal extends mixin(StoreMixin) {
       );
     }
 
-    let model = ServiceUtil.createFormModelFromSchema(ServiceSchema, service);
+    console.log('Render:', serviceSpec);
+    let model = ServiceUtil.createFormModelFromSchema(
+      this.props.schema,
+      serviceSpec
+    );
+
+    // Check if the ID in the model is the default and if true,
+    if (this.props.id) {
+      model.general.id = this.props.id;
+    }
 
     return (
       <ServiceForm
@@ -532,14 +527,14 @@ class ServiceFormModal extends mixin(StoreMixin) {
         model={model}
         onChange={this.handleClearError}
         onTabChange={this.handleTabChange}
-        schema={ServiceSchema}/>
+        schema={this.props.schema}/>
     );
   }
 
   getToggleButton() {
     let classSet = 'modal-form-title-label';
 
-    if (this.shouldDisableForm(this.state.service)) {
+    if (this.shouldDisableForm(this.state.serviceSpec)) {
       classSet = `${classSet} disabled`;
     }
 
@@ -620,7 +615,8 @@ ServiceFormModal.defaultProps = {
   onClose() {},
   open: false,
   id: null,
-  service: null
+  service: null,
+  schema: null
 };
 
 ServiceFormModal.propTypes = {
@@ -628,7 +624,8 @@ ServiceFormModal.propTypes = {
   isEdit: React.PropTypes.bool,
   open: React.PropTypes.bool,
   onClose: React.PropTypes.func,
-  service: React.PropTypes.instanceOf(Service)
+  service: React.PropTypes.instanceOf(Service).isRequired,
+  schema: React.PropTypes.object.isRequired
 };
 
 module.exports = ServiceFormModal;
